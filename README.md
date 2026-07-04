@@ -21,7 +21,7 @@ Advisory prompts and best-practice skills can be skipped by the model. Hooks can
 ## Install
 
 ```
-/plugin marketplace add <your-github-username>/grounding-guard
+/plugin marketplace add sanjeewamadhuranga/grounding-guard
 /plugin install grounding-guard@grounding-guard-marketplace
 ```
 
@@ -29,7 +29,7 @@ Requires Node ≥ 18 on PATH (already true for every Claude Code install).
 
 ## Configure
 
-`~/.gguard.json` (user) and `<project>/.gguard.json` (project, wins on conflict):
+`~/.gguard.json` (user-wide) and `.gguard.json` in your project root (wins on conflict):
 
 ```json
 {
