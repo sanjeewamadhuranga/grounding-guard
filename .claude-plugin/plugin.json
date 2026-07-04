@@ -2,7 +2,7 @@
   "name": "grounding-guard",
   "displayName": "Grounding Guard",
   "description": "Hook-enforced ground-truth verification for Claude Code. Catches fabricated package names, unpublished versions, unresolvable imports, and nonexistent git SHAs before they land in your codebase — and feeds the correction back to Claude so it fixes itself in-loop.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": {
     "name": "Sanjeewa Muhandiram",
     "email": "madhuranga17@gmail.com"

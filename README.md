@@ -12,7 +12,7 @@ Advisory prompts and best-practice skills can be skipped by the model. Hooks can
 
 | Verifier | Trigger | Checks | Default |
 |---|---|---|---|
-| `packages` | edits to `package.json`, `requirements*.txt`, `pyproject.toml`; manifests touched at commit time | package exists on npm/PyPI; pinned version was actually published | **block** |
+| `packages` | edits to `package.json`, `requirements*.txt`, `pyproject.toml`, `Cargo.toml`, `go.mod`, `Gemfile`, `pom.xml`, `build.gradle(.kts)`; manifests touched at commit time | package exists on npm / PyPI / crates.io / Go module proxy / RubyGems / Maven Central; pinned version was actually published | **block** |
 | `imports` | new `import`/`require` statements in JS/TS/Python edits | bare specifier resolves against `node_modules`/declared deps; Python module is stdlib, installed, or declared (with common alias mapping, e.g. `cv2` → `opencv-python`) | warn |
 | `gitrefs` | `git commit` commands | every SHA mentioned in the commit message exists in the repo | warn |
 
@@ -49,10 +49,9 @@ Or just run `/gguard-config` and describe what you want.
 - **Fast.** Registry answers are cached locally (24h positive / 1h negative) in `~/.cache/grounding-guard/`; repeat checks are offline-fast. Verifiers only run when a diff touches a manifest or adds an import.
 - **Private.** Your code never leaves your machine. The only network traffic is package *names/versions* queried against the public registries you already publish lockfiles for. No telemetry.
 
-## Limitations (v0.1)
+## Limitations (v0.2)
 
-- Ecosystems: npm + PyPI. Cargo/Go/RubyGems/Maven planned.
-- npm range specs get a warn (not block) when the base version was never published; exact pins block.
+- Range specs (`^1.2.3`, `~> 7.1`, cargo caret defaults) get a warn (not block) when the base version was never published; exact pins block. Go pseudo-versions and dynamic Gradle versions (`1.+`, `${prop}`) get existence checks only.
 - Python import→distribution mapping uses a curated alias list; unknown aliases produce warnings, not blocks (by design — imports verifier is warn-only by default).
 - API symbol verification (calls against installed type definitions) is planned for v0.2.
 
