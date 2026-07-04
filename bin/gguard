@@ -1,0 +1,194 @@
+#!/usr/bin/env node
+'use strict';
+
+// Grounding Guard hook entrypoint.
+//   gguard write  — PostToolUse for Edit|Write
+//   gguard commit — PreToolUse for Bash (acts only on `git commit`)
+//
+// Fail-open contract: any internal error, parse failure, or deadline overrun
+// exits 0 so the user's session is never broken by the verifier itself.
+
+const fs = require('fs');
+const path = require('path');
+
+const config = require('../lib/config');
+const log = require('../lib/log');
+const packages = require('../verifiers/packages');
+const imports = require('../verifiers/imports');
+const gitrefs = require('../verifiers/gitrefs');
+
+function readStdin() {
+  return new Promise((resolve) => {
+    let data = '';
+    process.stdin.setEncoding('utf8');
+    process.stdin.on('data', (chunk) => (data += chunk));
+    process.stdin.on('end', () => resolve(data));
+    process.stdin.on('error', () => resolve(data));
+  });
+}
+
+// Cap finding severity by the configured mode for its verifier.
+function applyModes(findings, cfg) {
+  const kept = [];
+  for (const f of findings) {
+    const mode = (cfg.verifiers || {})[f.verifier] || 'warn';
+    if (mode === 'off') continue;
+    if (mode === 'warn' && f.severity === 'block') kept.push({ ...f, severity: 'warn' });
+    else kept.push(f);
+  }
+  return kept;
+}
+
+function formatFindings(findings) {
+  return findings.map((f) => `- [${f.verifier}] ${f.message}`).join('\n');
+}
+
+async function runWrite(payload, cfg) {
+  const toolName = payload.tool_name;
+  const input = payload.tool_input || {};
+  const filePath = input.file_path;
+  if (!filePath || !['Edit', 'Write', 'MultiEdit'].includes(toolName)) return [];
+
+  let findings = [];
+  if (packages.isManifest(filePath)) {
+    // PostToolUse fires after the write succeeded: disk has the final content,
+    // which is the only way to get parseable JSON/TOML for Edit fragments.
+    let content;
+    try {
+      content = fs.readFileSync(filePath, 'utf8');
+    } catch {
+      return [];
+    }
+    findings = await packages.verify(filePath, content, cfg);
+  } else {
+    // Only scan the text this tool call added, so pre-existing imports in the
+    // file never generate findings.
+    const added =
+      toolName === 'Write'
+        ? input.content || ''
+        : [input.new_string, ...(input.edits || []).map((e) => e.new_string)].filter(Boolean).join('\n');
+    if (added) findings = imports.verify(filePath, added, cfg);
+  }
+  return findings;
+}
+
+function extractCommitMessage(command) {
+  const parts = [];
+  const re = /-m\s+(?:"((?:[^"\\]|\\.)*)"|'([^']*)'|(\S+))/g;
+  for (const m of String(command).matchAll(re)) {
+    parts.push(m[1] || m[2] || m[3] || '');
+  }
+  return parts.join('\n');
+}
+
+function modifiedManifests(cwd) {
+  const { execFileSync } = require('child_process');
+  try {
+    const out = execFileSync('git', ['status', '--porcelain'], { cwd, timeout: 2000 }).toString();
+    return out
+      .split('\n')
+      .map((l) => l.slice(3).trim())
+      .filter((f) => f && packages.isManifest(f))
+      .map((f) => path.join(cwd, f));
+  } catch {
+    return [];
+  }
+}
+
+async function runCommit(payload, cfg) {
+  const command = (payload.tool_input || {}).command || '';
+  if (!/\bgit\b[\s\S]*\bcommit\b/.test(command)) return [];
+  const cwd = payload.cwd || process.cwd();
+
+  let findings = [];
+  const message = extractCommitMessage(command);
+  if (message) findings = findings.concat(gitrefs.verify(message, cwd));
+
+  for (const manifest of modifiedManifests(cwd)) {
+    try {
+      const content = fs.readFileSync(manifest, 'utf8');
+      findings = findings.concat(await packages.verify(manifest, content, cfg));
+    } catch {}
+  }
+  return findings;
+}
+
+const debug = process.env.GGUARD_DEBUG ? (...a) => console.error('[gguard]', ...a) : () => {};
+
+async function main() {
+  const mode = process.argv[2];
+  const raw = await readStdin();
+  debug('stdin bytes:', raw.length);
+  let payload;
+  try {
+    payload = JSON.parse(raw);
+  } catch {
+    debug('stdin not JSON');
+    process.exit(0);
+  }
+
+  const cwd = payload.cwd || process.cwd();
+  const cfg = config.load(cwd);
+
+  // Hard deadline: fail open rather than stall the session.
+  const deadline = setTimeout(() => process.exit(0), cfg.timeoutMs);
+
+  let findings = [];
+  try {
+    findings = mode === 'commit' ? await runCommit(payload, cfg) : await runWrite(payload, cfg);
+  } catch (err) {
+    if (process.env.GGUARD_DEBUG) console.error('gguard error:', err);
+    clearTimeout(deadline);
+    process.exit(0);
+  }
+  clearTimeout(deadline);
+  debug('raw findings:', JSON.stringify(findings));
+
+  findings = applyModes(findings, cfg);
+  for (const f of findings) {
+    log.append(cfg, payload.session_id, { mode, ...f });
+  }
+
+  const blocks = findings.filter((f) => f.severity === 'block');
+  const warns = findings.filter((f) => f.severity === 'warn');
+
+  if (mode === 'commit') {
+    if (blocks.length) {
+      process.stdout.write(
+        JSON.stringify({
+          hookSpecificOutput: {
+            hookEventName: 'PreToolUse',
+            permissionDecision: 'deny',
+            permissionDecisionReason:
+              `Grounding Guard blocked this commit:\n${formatFindings(blocks)}\n` +
+              'Fix the fabricated reference(s), then retry.',
+          },
+        })
+      );
+    }
+    process.exit(0);
+  }
+
+  // write mode
+  if (blocks.length) {
+    // exit 2: stderr is fed back to Claude for in-loop self-correction
+    process.stderr.write(
+      `Grounding Guard found fabricated reference(s) in this edit:\n${formatFindings(blocks)}\n` +
+        'Correct them now — check the real name/version before re-editing.\n'
+    );
+    process.exit(2);
+  }
+  if (warns.length) {
+    process.stdout.write(
+      JSON.stringify({
+        hookSpecificOutput: {
+          hookEventName: 'PostToolUse',
+          additionalContext: `Grounding Guard warnings (non-blocking):\n${formatFindings(warns)}`,
+        },
+      })
+    );
+  }
+  process.exit(0);
+}
+
+main().catch(() => process.exit(0));

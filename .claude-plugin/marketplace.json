@@ -1,0 +1,14 @@
+{
+  "name": "grounding-guard-marketplace",
+  "owner": {
+    "name": "Sanjeewa Muhandiram",
+    "email": "madhuranga17@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "grounding-guard",
+      "source": "./",
+      "description": "Catches fabricated packages, versions, imports, and git SHAs before they land. Hook-enforced ground-truth verification for Claude Code."
+    }
+  ]
+}
