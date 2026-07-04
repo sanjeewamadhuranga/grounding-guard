@@ -9,7 +9,7 @@ Help the user create or edit their Grounding Guard configuration.
 
 Config files (later overrides earlier, deep-merged):
 1. `~/.gguard.json` — user defaults
-2. `<project>/.gguard.json` — per-project overrides
+2. `.gguard.json` in the project root — per-project overrides
 
 Full schema with defaults:
 
