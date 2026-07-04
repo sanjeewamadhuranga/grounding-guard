@@ -1,5 +1,6 @@
 {
   "name": "grounding-guard-marketplace",
+  "description": "Ground-truth verification for Claude Code: hook-enforced detection of fabricated packages, versions, imports, and git SHAs.",
   "owner": {
     "name": "Sanjeewa Muhandiram",
     "email": "madhuranga17@gmail.com"
