@@ -1,6 +1,8 @@
-# Grounding Guard [![Listed on ClaudePluginHub](https://www.claudepluginhub.com/badge/sanjeewamadhuranga-grounding-guard)](https://www.claudepluginhub.com/plugins/sanjeewamadhuranga-grounding-guard?ref=badge)
+# Grounding Guard
 
-**Hook-enforced ground-truth verification for Claude Code.** Catches fabricated package names, unpublished versions, unresolvable imports, and nonexistent git SHAs *before* they land — and feeds the correction back to Claude so it fixes itself in-loop, usually without you noticing.
+**
+[![Listed on ClaudePluginHub](https://www.claudepluginhub.com/badge/sanjeewamadhuranga-grounding-guard)](https://www.claudepluginhub.com/plugins/sanjeewamadhuranga-grounding-guard?ref=badge)
+Hook-enforced ground-truth verification for Claude Code.** Catches fabricated package names, unpublished versions, unresolvable imports, and nonexistent git SHAs *before* they land — and feeds the correction back to Claude so it fixes itself in-loop, usually without you noticing.
 
 ## Why
 
