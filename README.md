@@ -1,4 +1,7 @@
 # Grounding Guard
+[![test](https://github.com/sanjeewamadhuranga/grounding-guard/actions/workflows/test.yml/badge.svg)](https://github.com/sanjeewamadhuranga/grounding-guard/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/github/license/sanjeewamadhuranga/grounding-guard)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](package.json)
 [![Listed on ClaudePluginHub](https://www.claudepluginhub.com/badge/sanjeewamadhuranga-grounding-guard)](https://www.claudepluginhub.com/plugins/sanjeewamadhuranga-grounding-guard?ref=badge)
 
 **Hook-enforced ground-truth verification for Claude Code.** Catches fabricated package names, unpublished versions, unresolvable imports, and nonexistent git SHAs *before* they land — and feeds the correction back to Claude so it fixes itself in-loop, usually without you noticing.
