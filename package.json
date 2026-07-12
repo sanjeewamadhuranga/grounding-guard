@@ -1,12 +1,38 @@
 {
   "name": "grounding-guard",
   "version": "0.2.0",
-  "private": true,
-  "description": "Hook-enforced ground-truth verification plugin for Claude Code",
+  "description": "Hook-enforced ground-truth verification for Claude Code. Catches fabricated package names, unpublished versions, unresolvable imports, and nonexistent git SHAs before they land.",
+  "homepage": "https://github.com/sanjeewamadhuranga/grounding-guard",
+  "repository": "https://github.com/sanjeewamadhuranga/grounding-guard",
+  "bugs": "https://github.com/sanjeewamadhuranga/grounding-guard/issues",
+  "author": {
+    "name": "Sanjeewa Muhandiram",
+    "email": "madhuranga17@gmail.com"
+  },
   "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "claude-code-plugin",
+    "verification",
+    "hallucination",
+    "slopsquatting",
+    "supply-chain-security",
+    "hooks",
+    "npm",
+    "pypi"
+  ],
   "engines": {
     "node": ">=18"
   },
+  "files": [
+    "bin",
+    "hooks",
+    "lib",
+    "verifiers",
+    ".claude-plugin",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "test": "node --test \"test/*.test.js\""
   }
