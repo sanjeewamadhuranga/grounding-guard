@@ -3,6 +3,8 @@
 
 **Hook-enforced ground-truth verification for Claude Code.** Catches fabricated package names, unpublished versions, unresolvable imports, and nonexistent git SHAs *before* they land — and feeds the correction back to Claude so it fixes itself in-loop, usually without you noticing.
 
+![Grounding Guard blocking a hallucinated npm package (express-rate-limiter-pro) and Claude self-correcting to the real one (express-rate-limit)](assets/demo.gif)
+
 ## Why
 
 LLM coding agents sometimes "rush to completion": they invent plausible-looking package names, pin versions that were never published, or reference commit SHAs that don't exist. Beyond wasted debugging time, fabricated package names are a real supply-chain attack surface — attackers pre-register commonly hallucinated names (**slopsquatting**).
